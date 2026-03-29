@@ -1,11 +1,14 @@
 # Venus E 3.0 Card
 
-Lovelace card for **Marstek Venus E 3.0** with the custom integration `marstek_venus` (marstek-venus-e-api). Layout is oriented on the [B2500D-Card](https://github.com/Neisi/B2500D-Card): **one JavaScript file** without extra `localize/` paths under `/local/`, same idea as the bundled b2500d release.
+Lovelace-Karte für den **Marstek Venus E** (Hybrid: Wechselrichter + Speicher) mit der Integration **marstek_venus**. Die Darstellung ist bewusst **nicht** wie beim Marstek B2500 (separate MPPT-Strings), sondern näher an **All-in-One-Hybrid-Übersichten**: Leistungsfluss Solar / Netz / optional Insel / Batterie, Teal-Farbwelt und Fokus auf System- statt Zellenoptik.
 
-## Installation (aligned with b2500d manual install)
+## UI-Konzept (Recherche / Einordnung)
 
-1. Copy **`venuse3-card.js`** to `/config/www/` (only this file).
-2. Register the resource (YAML mode `configuration.yaml` or **Settings → Dashboards → three dots → Resources**):
+Hersteller- und Fachmaterial zum Venus E betont **App-Steuerung**, **Betriebsmodi** (z. B. Eigenverbrauch, KI/Preisbezug, manuell) und **Hybrid-Funktion** statt klassischer „Akku mit zwei PV-Strings“. Gängige Speicher-Dashboards (App & Portal) nutzen deshalb oft eine **Fluss- oder Statuszeile** (PV, Netz, Haus/Speicher) plus Detailkacheln. Diese Karte spiegelt das mit der **Flow-Leiste** und den bestehenden Detailkarten wider.
+
+## Installation
+
+Eine Datei **`venuse3-card.js`** nach `/config/www/` kopieren und als Modul einbinden:
 
 ```yaml
 resources:
@@ -13,44 +16,43 @@ resources:
     type: module
 ```
 
-3. **Developer tools → YAML → Restart** is not required for resources; reload the browser or **Ctrl+F5**. If the card still does not appear, clear cache or add `?v=2` to the resource URL once.
+Details siehe frühere Version der Anleitung (kein `localize/`-Ordner nötig).
 
-4. In the dashboard use:
+## Entitäten: Deutsch vs. Englisch
 
-```yaml
-type: custom:venuse3-card
-name: Venus E 3.0
-entities:
-  battery_soc: sensor.marstek_venus_battery_soc
-  # … see examples/dashboard-snippet.yaml
-```
+In der YAML-Konfiguration bleiben die **Schlüssel** immer gleich (`battery_soc`, `pv_power`, …). Nur die **Home-Assistant-`entity_id`** hängt von der **UI-Sprache** und der Slug-Bildung ab.
 
-### Previous mistake (why the card stayed blank)
+| Konfig-Schlüssel | Integration (de.json) | Beispiel DE | Beispiel EN |
+|------------------|------------------------|------------|-------------|
+| `battery_soc` | Batterie-Ladezustand | `sensor.marstek_venus_batterie_ladezustand` | `sensor.marstek_venus_battery_soc` |
+| `battery_capacity` | Batteriekapazität | `sensor.marstek_venus_batteriekapazitat` | `sensor.marstek_venus_battery_capacity` |
+| `pv_power` | Solarleistung | `sensor.marstek_venus_solarleistung` | `sensor.marstek_venus_pv_power` |
+| `ongrid_power` | Netzleistung | `sensor.marstek_venus_netzleistung` | `sensor.marstek_venus_ongrid_power` |
+| `offgrid_power` | Off-Grid-Leistung | `sensor.marstek_venus_off_grid_leistung` | `sensor.marstek_venus_offgrid_power` |
+| `total_pv_energy` | Gesamte Solarenergie | `sensor.marstek_venus_gesamte_solarenergie` | `sensor.marstek_venus_total_pv_energy` |
+| `operating_mode` | Betriebsmodus | `sensor.marstek_venus_betriebsmodus` | `sensor.marstek_venus_operating_mode` |
+| `mode_select` | Betriebsmodus | `select.marstek_venus_betriebsmodus` | `select.marstek_venus_operating_mode` |
+| `charge_permission` | Ladeberechtigung | `switch.marstek_venus_ladeberechtigung` | `switch.marstek_venus_charge_permission` |
+| `discharge_permission` | Entladeberechtigung | `switch.marstek_venus_entladeberechtigung` | `switch.marstek_venus_discharge_permission` |
 
-If the resource pointed to `venuse3-card.js` **but** the `localize/` folder was missing or not next to that file, the browser failed to load `./localize/en.js` (404). Relative imports resolve next to the script URL, e.g. `/local/localize/en.js` when the script lies in `/local/` — wrong. **Now all strings are inside `venuse3-card.js`.**
+Abweichende Slugs (z. B. Umlaute) bitte unter **Einstellungen → Geräte & Dienste → Entitäten** oder **Entwicklerwerkzeuge → Zustände** prüfen und die YAML anpassen.
 
-### HACS
+## Beispiele
 
-`hacs.json` uses `content_in_root: true` and `filename: venuse3-card.js` like b2500d. After install, the resource is often added automatically; if not, set it manually to `/hacsfiles/venuse3-card/venuse3-card.js` (exact path depends on your HACS version; check **HACS → the plugin → Open source**).
+- `examples/dashboard-snippet-de.yaml` – deutsche `entity_id`-Beispiele  
+- `examples/dashboard-snippet.yaml` – englische Beispiele  
 
-## Configuration
+## Parameter (Auszug)
 
-Minimal: **`entities.battery_soc`**. Full entity list: see `examples/dashboard-snippet.yaml` and the visual editor.
+- **`subtitle`**: Zeile unter dem Titel (Standard: `Venus E 3.0`). Leer lassen und im Code greift eine kurze Produktzeile (Hybrid-Bezug).
+- **`show_flow`**: Leistungsfluss-Leiste ein/aus (Standard: an).
+- **`icon`**: klassisches vertikales Balken-Icon (eher „Hardware“-Look; Standard: aus, damit Venus E nicht wie B2500 wirkt).
+- Weitere Schalter wie `solar`, `grid`, `battery`, `energy`, `settings`, `max_pv_power` unverändert.
 
-Entity IDs may differ (e.g. `sensor.marstek_venus_*`); check **Developer tools → States**.
+## `localize/`
 
-## Optional: `localize/` folder
+Nur Referenz; die laufende Karte nutzt eingebettete Texte in `venuse3-card.js`.
 
-The files under `localize/` are **reference copies** of the English/German strings; the running card uses the embedded `languages` object in `venuse3-card.js`. Edit that object (or sync from `localize/*.js` after edits there).
-
-## Optional build
-
-```bash
-npm install && npm run build
-```
-
-Rollup outputs `dist/venuse3-card.js` (no separate localize imports in the current source).
-
-## License
+## Lizenz
 
 MIT

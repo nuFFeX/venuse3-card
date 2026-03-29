@@ -1,12 +1,10 @@
-# 1) Resource (once) – same pattern as b2500d-card:
-# resources:
-#   - url: /local/venuse3-card.js
-#     type: module
-#
-# 2) Card on the dashboard:
+# Englische UI / englische entity_id-Suffixe (translation_key bleibt gleich).
 
 type: custom:venuse3-card
-name: Venus E 3.0
+name: Marstek Venus
+subtitle: Venus E 3.0
+show_flow: true
+icon: false
 entities:
   battery_soc: sensor.marstek_venus_battery_soc
   battery_capacity: sensor.marstek_venus_battery_capacity

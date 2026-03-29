@@ -1,0 +1,22 @@
+# Deutsche Home-Assistant-Oberfläche: entity_id setzt sich oft aus dem
+# deutschen Anzeigenamen ab (siehe Entwicklerwerkzeuge → Zustände).
+# Die YAML-Schlüssel (battery_soc, pv_power, …) bleiben englisch – nur die
+# sensor.*-IDs sind bei dir auf Deutsch.
+
+type: custom:venuse3-card
+name: Marstek Venus
+subtitle: Venus E 3.0
+show_flow: true
+icon: false
+entities:
+  battery_soc: sensor.marstek_venus_batterie_ladezustand
+  battery_capacity: sensor.marstek_venus_batteriekapazitat
+  pv_power: sensor.marstek_venus_solarleistung
+  ongrid_power: sensor.marstek_venus_netzleistung
+  offgrid_power: sensor.marstek_venus_off_grid_leistung
+  total_pv_energy: sensor.marstek_venus_gesamte_solarenergie
+  operating_mode: sensor.marstek_venus_betriebsmodus
+  mode_select: select.marstek_venus_betriebsmodus
+  charge_permission: switch.marstek_venus_ladeberechtigung
+  discharge_permission: switch.marstek_venus_entladeberechtigung
+max_pv_power: 6000

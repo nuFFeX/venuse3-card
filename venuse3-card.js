@@ -12,6 +12,8 @@ const languages = {
       mode: "Operating mode",
       charge_hint: "Charge",
       discharge_hint: "Discharge",
+      product_line: "Marstek Venus E · hybrid inverter & storage",
+      flow_caption: "Power flow (live)",
     },
     card: {
       solar: "Solar",
@@ -35,6 +37,8 @@ const languages = {
       settings: "Show settings (mode select)",
       max_pv_power: "PV bar full scale (W)",
       custom_settings: "Custom rows (entity / name / icon)",
+      subtitle: "Subtitle under title (e.g. Venus E 3.0)",
+      show_flow: "Show power-flow strip (Solar / Grid / Battery)",
     },
     helpers: {
       entities:
@@ -42,6 +46,9 @@ const languages = {
       max_pv_power: "Upper limit for the solar power progress bar.",
       custom_settings:
         "Extra sensor / switch / select rows at the bottom.",
+      subtitle: "Short line under the card title; leave empty to hide.",
+      show_flow:
+        "Typical for all-in-one hybrids: quick overview before the detail tiles.",
     },
   },
   de: {
@@ -54,6 +61,8 @@ const languages = {
       mode: "Betriebsmodus",
       charge_hint: "Laden",
       discharge_hint: "Entladen",
+      product_line: "Marstek Venus E · Hybrid-Wechselrichter & Speicher",
+      flow_caption: "Leistungsfluss (live)",
     },
     card: {
       solar: "Solar",
@@ -77,12 +86,17 @@ const languages = {
       settings: "Einstellungen (Moduswahl)",
       max_pv_power: "PV-Balken Vollausschlag (W)",
       custom_settings: "Zusätzliche Zeilen (Entität / Name / Icon)",
+      subtitle: "Untertitel unter dem Kartentitel (z. B. Venus E 3.0)",
+      show_flow: "Leistungsfluss-Leiste (Solar / Netz / Batterie)",
     },
     helpers: {
       entities: "Zuordnung der marstek_venus-Entitäten (siehe README).",
       max_pv_power: "Obergrenze für den Solar-Leistungsbalken.",
       custom_settings:
         "Zusätzliche Sensor-, Schalter- oder Auswahl-Zeilen unten.",
+      subtitle: "Kurze Zeile unter dem Titel; leer lassen zum Ausblenden.",
+      show_flow:
+        "Üblich bei All-in-One-Hybriden: Schnellüberblick vor den Kacheln.",
     },
   },
 };
@@ -129,6 +143,10 @@ class Venuse3Card extends LitElement {
         --muted: var(--secondary-text-color, var(--primary-text-color));
         --divider: var(--entities-divider-color, var(--divider-color));
         --radius: 22px;
+        --venus-teal: #0f766e;
+        --venus-cyan: #14b8a6;
+        --venus-cyan-bright: #2dd4bf;
+        --venus-surface: rgba(20, 184, 166, 0.08);
         display: block;
       }
       .container {
@@ -152,12 +170,95 @@ class Venuse3Card extends LitElement {
         gap: 14px;
         padding: 6px 0 14px;
       }
+      .product-line {
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin-top: 4px;
+        line-height: 1.35;
+        max-width: 100%;
+      }
+      .flow-wrap {
+        width: 100%;
+        margin: 4px 0 12px;
+        padding: 0 6px;
+        box-sizing: border-box;
+      }
+      .flow-caption {
+        font-size: 11px;
+        color: var(--muted);
+        margin: 0 6px 8px;
+        font-weight: 500;
+      }
+      .flow-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: center;
+        gap: 2px 0;
+        padding: 12px 8px;
+        background: var(--venus-surface);
+        border-radius: 16px;
+        border: 1px solid rgba(15, 118, 110, 0.2);
+        box-sizing: border-box;
+      }
+      .flow-node {
+        flex: 1 1 76px;
+        min-width: 76px;
+        max-width: 160px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 2px;
+        padding: 8px 4px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.18s ease;
+        box-sizing: border-box;
+      }
+      .flow-node:hover {
+        background: rgba(15, 118, 110, 0.1);
+      }
+      .flow-node ha-icon {
+        color: var(--venus-teal);
+        --mdc-icon-size: 28px;
+      }
+      .flow-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .flow-value {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.25;
+      }
+      .flow-unit {
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .flow-chev {
+        display: flex;
+        align-items: center;
+        align-self: center;
+        opacity: 0.4;
+        padding: 0 2px;
+      }
+      .flow-chev ha-icon {
+        color: var(--muted);
+        --mdc-icon-size: 22px;
+      }
       .unit {
         width: 80px;
         height: 130px;
         border-radius: 18px;
-        background: linear-gradient(135deg, #3d5a80 0%, #293241 50%, #3d5a80 100%);
-        box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.06), inset 0 -8px 16px rgba(0, 0, 0, 0.45);
+        background: linear-gradient(145deg, #134e4a 0%, #0f766e 42%, #115e59 100%);
+        box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.07), inset 0 -8px 18px rgba(0, 0, 0, 0.4);
         position: relative;
         display: flex;
         align-items: center;
@@ -178,8 +279,8 @@ class Venuse3Card extends LitElement {
         position: absolute;
         bottom: 2px;
         width: 4px;
-        background: linear-gradient(#7dd3fc, #38bdf8);
-        box-shadow: 0 0 4px #38bdf8;
+        background: linear-gradient(var(--venus-cyan-bright), var(--venus-cyan));
+        box-shadow: 0 0 5px rgba(45, 212, 191, 0.65);
         border-radius: 2px;
         height: 0%;
         transition: height 0.6s ease;
@@ -229,7 +330,7 @@ class Venuse3Card extends LitElement {
       }
       .card {
         position: relative;
-        background: rgba(100, 100, 100, 0.12);
+        background: rgba(15, 118, 110, 0.06);
         border-radius: var(--radius);
         padding: 12px;
         box-sizing: border-box;
@@ -304,7 +405,7 @@ class Venuse3Card extends LitElement {
         top: 0;
         bottom: 0;
         width: 0%;
-        background: #38bdf8;
+        background: linear-gradient(90deg, var(--venus-teal), var(--venus-cyan-bright));
         border-radius: 12px;
         transition: width 0.6s ease;
       }
@@ -431,13 +532,15 @@ class Venuse3Card extends LitElement {
 
   setConfig(config) {
     this.config = {
-      name: "Venus E 3.0",
+      name: "Marstek Venus",
+      subtitle: "Venus E 3.0",
+      show_flow: true,
       solar: true,
       grid: true,
       battery: true,
       energy: true,
       settings: true,
-      icon: true,
+      icon: false,
       compact: false,
       max_pv_power: 6000,
       entities: {},
@@ -520,12 +623,85 @@ class Venuse3Card extends LitElement {
   }
 
   _renderHeader(lang) {
+    const sub = (this.config.subtitle || "").trim();
+    const line = sub || localize("labels.product_line", lang);
     return html`
-      <div style="display:grid;width:100%;padding:0 12px;margin-bottom:6px;">
+      <div style="width:100%;padding:0 12px;margin-bottom:4px;box-sizing:border-box;">
         <div style="font-weight:600;font-size:20px">${this.config.name}</div>
-        <div style="font-size:11px;color:var(--muted);">
+        <div class="product-line">${line}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">
           ${localize("labels.last_update", lang)}: ${this._lastUpdate || "—"}
         </div>
+      </div>
+    `;
+  }
+
+  _renderFlow(lang) {
+    if (!this.config.show_flow) return html``;
+    const e = this.config.entities || {};
+    const chev = html`<div class="flow-chev"><ha-icon icon="mdi:chevron-right"></ha-icon></div>`;
+    const nodes = [];
+
+    if (this.config.solar) {
+      const id = e.pv_power;
+      const val = id ? `${Math.round(this._pv)}` : "—";
+      nodes.push(html`
+        <div class="flow-node" @click=${() => this._handleMoreInfo(id)}>
+          <ha-icon icon="mdi:solar-power-variant-outline"></ha-icon>
+          <span class="flow-label">${localize("card.solar", lang)}</span>
+          <span class="flow-value">${val}</span>
+          <span class="flow-unit">${id ? "W" : ""}</span>
+        </div>
+      `);
+    }
+
+    if (this.config.grid) {
+      const id = e.ongrid_power;
+      const val = id ? `${Math.round(this._grid)}` : "—";
+      nodes.push(html`
+        <div class="flow-node" @click=${() => this._handleMoreInfo(id)}>
+          <ha-icon icon="mdi:transmission-tower"></ha-icon>
+          <span class="flow-label">${localize("card.grid", lang)}</span>
+          <span class="flow-value">${val}</span>
+          <span class="flow-unit">${id ? "W" : ""}</span>
+        </div>
+      `);
+    }
+
+    if (this._offgrid !== null && e.offgrid_power) {
+      nodes.push(html`
+        <div class="flow-node" @click=${() => this._handleMoreInfo(e.offgrid_power)}>
+          <ha-icon icon="mdi:home-lightning-bolt-outline"></ha-icon>
+          <span class="flow-label">${localize("card.offgrid", lang)}</span>
+          <span class="flow-value">${Math.round(this._offgrid)}</span>
+          <span class="flow-unit">W</span>
+        </div>
+      `);
+    }
+
+    if (this.config.battery && e.battery_soc) {
+      nodes.push(html`
+        <div class="flow-node" @click=${() => this._handleMoreInfo(e.battery_soc)}>
+          <ha-icon icon="mdi:battery-high"></ha-icon>
+          <span class="flow-label">${localize("card.battery", lang)}</span>
+          <span class="flow-value">${Math.round(this._soc)}</span>
+          <span class="flow-unit">%</span>
+        </div>
+      `);
+    }
+
+    if (nodes.length < 2) return html``;
+
+    const row = [];
+    nodes.forEach((node, i) => {
+      if (i) row.push(chev);
+      row.push(node);
+    });
+
+    return html`
+      <div class="flow-wrap">
+        <div class="flow-caption">${localize("labels.flow_caption", lang)}</div>
+        <div class="flow-row">${row}</div>
       </div>
     `;
   }
@@ -631,10 +807,11 @@ class Venuse3Card extends LitElement {
           <div
             class="ring"
             style="background: conic-gradient(
-              #ef4444 0 ${Math.min(this._soc, 12)}%,
-              #f97316 ${Math.min(this._soc, 40)}%,
-              #38bdf8 ${Math.min(this._soc, 100)}%,
-              #0f172a ${this._soc}% 100%
+              #b45309 0 ${Math.min(this._soc, 15)}%,
+              #f59e0b ${Math.min(this._soc, 45)}%,
+              var(--venus-cyan-bright) ${Math.min(this._soc, 92)}%,
+              #0f766e ${Math.min(this._soc, 100)}%,
+              #0c4a43 ${this._soc}% 100%
             );"
             @click=${() => this._handleMoreInfo(e.battery_soc)}
           >
@@ -838,6 +1015,7 @@ class Venuse3Card extends LitElement {
       <div class="container">
         <div class="device">
           ${this._renderHeader(lang)}
+          ${this._renderFlow(lang)}
           ${this.config.icon ? this._renderUnit(bcls) : ""}
         </div>
         <section class="grid">
@@ -873,13 +1051,15 @@ class Venuse3CardEditor extends LitElement {
 
   setConfig(config) {
     this._config = {
-      name: "Venus E 3.0",
+      name: "Marstek Venus",
+      subtitle: "Venus E 3.0",
+      show_flow: true,
       solar: true,
       grid: true,
       battery: true,
       energy: true,
       settings: true,
-      icon: true,
+      icon: false,
       compact: false,
       max_pv_power: 6000,
       entities: {
@@ -931,6 +1111,8 @@ class Venuse3CardEditor extends LitElement {
     if (!this._config) return html``;
     const schema = [
       { name: "name", selector: { text: {} } },
+      { name: "subtitle", selector: { text: {} } },
+      { name: "show_flow", selector: { boolean: {} } },
       {
         name: "entities",
         selector: {
