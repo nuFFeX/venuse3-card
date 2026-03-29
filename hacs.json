@@ -1,5 +1,6 @@
 {
   "name": "Venus E 3.0 Card",
-  "render_readme": true,
-  "filename": "venuse3-card.js"
+  "content_in_root": true,
+  "filename": "venuse3-card.js",
+  "render_readme": true
 }

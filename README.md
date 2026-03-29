@@ -1,57 +1,55 @@
 # Venus E 3.0 Card
 
-Lovelace card for **Marstek Venus E 3.0** data from the custom integration [`marstek_venus`](https://github.com/) (project `marstek-venus-e-api`). Layout and behaviour are oriented on the [b2500d-card](https://github.com/) structure: solar bar, grid power, battery ring, total PV energy, optional mode select.
+Lovelace card for **Marstek Venus E 3.0** with the custom integration `marstek_venus` (marstek-venus-e-api). Layout is oriented on the [B2500D-Card](https://github.com/Neisi/B2500D-Card): **one JavaScript file** without extra `localize/` paths under `/local/`, same idea as the bundled b2500d release.
 
-## Installation
+## Installation (aligned with b2500d manual install)
 
-1. Copy the folder `venuse3-card` (including `localize/`) into `config/www/community/venuse3-card/` (or your preferred path under `www`).
-2. Add a Lovelace resource:
+1. Copy **`venuse3-card.js`** to `/config/www/` (only this file).
+2. Register the resource (YAML mode `configuration.yaml` or **Settings → Dashboards → three dots → Resources**):
 
 ```yaml
 resources:
-  - url: /local/community/venuse3-card/venuse3-card.js
+  - url: /local/venuse3-card.js
     type: module
 ```
 
-3. Reload the frontend (or restart Home Assistant).
+3. **Developer tools → YAML → Restart** is not required for resources; reload the browser or **Ctrl+F5**. If the card still does not appear, clear cache or add `?v=2` to the resource URL once.
 
-### HACS (manual)
+4. In the dashboard use:
 
-Add as custom repository (Lovelace plugin) if you publish the repo, or install by copying files as above. The repository must contain `venuse3-card.js` and `localize/*.js` next to it so that relative imports resolve.
+```yaml
+type: custom:venuse3-card
+name: Venus E 3.0
+entities:
+  battery_soc: sensor.marstek_venus_battery_soc
+  # … see examples/dashboard-snippet.yaml
+```
+
+### Previous mistake (why the card stayed blank)
+
+If the resource pointed to `venuse3-card.js` **but** the `localize/` folder was missing or not next to that file, the browser failed to load `./localize/en.js` (404). Relative imports resolve next to the script URL, e.g. `/local/localize/en.js` when the script lies in `/local/` — wrong. **Now all strings are inside `venuse3-card.js`.**
+
+### HACS
+
+`hacs.json` uses `content_in_root: true` and `filename: venuse3-card.js` like b2500d. After install, the resource is often added automatically; if not, set it manually to `/hacsfiles/venuse3-card/venuse3-card.js` (exact path depends on your HACS version; check **HACS → the plugin → Open source**).
 
 ## Configuration
 
-Minimal configuration requires **`entities.battery_soc`**. All other keys are optional; hide blocks with the boolean flags (`solar`, `grid`, `battery`, `energy`, `settings`).
+Minimal: **`entities.battery_soc`**. Full entity list: see `examples/dashboard-snippet.yaml` and the visual editor.
 
-| Key | Description |
-|-----|-------------|
-| `battery_soc` | State of charge (%) |
-| `battery_capacity` | Capacity (Wh), shown as kWh in the ring |
-| `pv_power` | Solar power (W) |
-| `ongrid_power` | Grid power (W) |
-| `offgrid_power` | Off-grid power (W), optional |
-| `total_pv_energy` | Total PV energy (Wh or kWh), optional |
-| `operating_mode` | Sensor for current mode text (optional) |
-| `mode_select` | `select.marstek_venus_operating_mode` for the settings row |
-| `charge_permission` | Switch (read-only flags); used for charge animation hint |
-| `discharge_permission` | Switch; used for discharge animation hint |
+Entity IDs may differ (e.g. `sensor.marstek_venus_*`); check **Developer tools → States**.
 
-Entity IDs may differ depending on your device name in the registry. Check **Developer tools → States** and adjust the prefix (often `sensor.marstek_venus_*`).
+## Optional: `localize/` folder
 
-### Example
+The files under `localize/` are **reference copies** of the English/German strings; the running card uses the embedded `languages` object in `venuse3-card.js`. Edit that object (or sync from `localize/*.js` after edits there).
 
-See `examples/dashboard-snippet.yaml`.
-
-## Build (optional)
-
-To bundle a single file (experimental):
+## Optional build
 
 ```bash
-npm install
-npm run build
+npm install && npm run build
 ```
 
-Output: `dist/venuse3-card.js` (you would need to inline or adjust localize imports for a true single-file drop-in).
+Rollup outputs `dist/venuse3-card.js` (no separate localize imports in the current source).
 
 ## License
 

@@ -1,7 +1,9 @@
-# Lovelace (Dashboard YAML): add as manual resource if not using HACS bundle
+# 1) Resource (once) – same pattern as b2500d-card:
 # resources:
-#   - url: /local/community/venuse3-card/venuse3-card.js
+#   - url: /local/venuse3-card.js
 #     type: module
+#
+# 2) Card on the dashboard:
 
 type: custom:venuse3-card
 name: Venus E 3.0
@@ -17,10 +19,3 @@ entities:
   charge_permission: switch.marstek_venus_charge_permission
   discharge_permission: switch.marstek_venus_discharge_permission
 max_pv_power: 6000
-solar: true
-grid: true
-battery: true
-energy: true
-settings: true
-icon: true
-compact: false

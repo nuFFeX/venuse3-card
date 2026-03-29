@@ -1,8 +1,91 @@
 import { LitElement, html, css } from "https://unpkg.com/lit-element/lit-element.js?module";
-import en from "./localize/en.js";
-import de from "./localize/de.js";
 
-const languages = { en, de };
+/** Inline i18n: eine Datei wie b2500d-Release, damit /local/venuse3-card.js ohne Unterordner funktioniert. */
+const languages = {
+  en: {
+    errors: {
+      missing_entities:
+        "Provide an entities object with at least battery_soc.",
+    },
+    labels: {
+      last_update: "Last update",
+      mode: "Operating mode",
+      charge_hint: "Charge",
+      discharge_hint: "Discharge",
+    },
+    card: {
+      solar: "Solar",
+      grid: "Grid",
+      offgrid: "Off-grid",
+      battery: "Battery",
+      energy: "Solar energy (total)",
+      total: "Total",
+      realtime: "Realtime power",
+      settings: "Settings",
+    },
+    editor: {
+      name: "Card title",
+      entities: "Entities",
+      compact: "Compact layout",
+      icon: "Show device icon",
+      solar: "Show solar",
+      grid: "Show grid",
+      battery: "Show battery",
+      energy: "Show total solar energy",
+      settings: "Show settings (mode select)",
+      max_pv_power: "PV bar full scale (W)",
+      custom_settings: "Custom rows (entity / name / icon)",
+    },
+    helpers: {
+      entities:
+        "Map integration entities (see README for marstek_venus keys).",
+      max_pv_power: "Upper limit for the solar power progress bar.",
+      custom_settings:
+        "Extra sensor / switch / select rows at the bottom.",
+    },
+  },
+  de: {
+    errors: {
+      missing_entities:
+        "Bitte ein entities-Objekt mit mindestens battery_soc angeben.",
+    },
+    labels: {
+      last_update: "Aktualisierung",
+      mode: "Betriebsmodus",
+      charge_hint: "Laden",
+      discharge_hint: "Entladen",
+    },
+    card: {
+      solar: "Solar",
+      grid: "Netz",
+      offgrid: "Insel",
+      battery: "Batterie",
+      energy: "Solarenergie (Summe)",
+      total: "Gesamt",
+      realtime: "Echtzeitleistung",
+      settings: "Einstellungen",
+    },
+    editor: {
+      name: "Kartentitel",
+      entities: "Entitäten",
+      compact: "Kompaktansicht",
+      icon: "Geräte-Icon anzeigen",
+      solar: "Solar anzeigen",
+      grid: "Netz anzeigen",
+      battery: "Batterie anzeigen",
+      energy: "Summe Solarenergie anzeigen",
+      settings: "Einstellungen (Moduswahl)",
+      max_pv_power: "PV-Balken Vollausschlag (W)",
+      custom_settings: "Zusätzliche Zeilen (Entität / Name / Icon)",
+    },
+    helpers: {
+      entities: "Zuordnung der marstek_venus-Entitäten (siehe README).",
+      max_pv_power: "Obergrenze für den Solar-Leistungsbalken.",
+      custom_settings:
+        "Zusätzliche Sensor-, Schalter- oder Auswahl-Zeilen unten.",
+    },
+  },
+};
 
 function _getLangCode(langInput) {
   const raw = (langInput || (typeof navigator !== "undefined" && navigator.language) || "en")
