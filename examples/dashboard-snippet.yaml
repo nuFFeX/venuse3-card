@@ -1,0 +1,26 @@
+# Lovelace (Dashboard YAML): add as manual resource if not using HACS bundle
+# resources:
+#   - url: /local/community/venuse3-card/venuse3-card.js
+#     type: module
+
+type: custom:venuse3-card
+name: Venus E 3.0
+entities:
+  battery_soc: sensor.marstek_venus_battery_soc
+  battery_capacity: sensor.marstek_venus_battery_capacity
+  pv_power: sensor.marstek_venus_pv_power
+  ongrid_power: sensor.marstek_venus_ongrid_power
+  offgrid_power: sensor.marstek_venus_offgrid_power
+  total_pv_energy: sensor.marstek_venus_total_pv_energy
+  operating_mode: sensor.marstek_venus_operating_mode
+  mode_select: select.marstek_venus_operating_mode
+  charge_permission: switch.marstek_venus_charge_permission
+  discharge_permission: switch.marstek_venus_discharge_permission
+max_pv_power: 6000
+solar: true
+grid: true
+battery: true
+energy: true
+settings: true
+icon: true
+compact: false
