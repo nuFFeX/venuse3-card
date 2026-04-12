@@ -16,11 +16,9 @@ const languages = {
       flow_caption: "Power flow (live)",
     },
     card: {
-      solar: "Solar",
       grid: "Grid",
       offgrid: "Off-grid",
       battery: "Battery",
-      energy: "Solar energy (total)",
       total: "Total",
       realtime: "Realtime power",
       settings: "Settings",
@@ -30,25 +28,21 @@ const languages = {
       entities: "Entities",
       compact: "Compact layout",
       icon: "Show device icon",
-      solar: "Show solar",
       grid: "Show grid",
       battery: "Show battery",
-      energy: "Show total solar energy",
       settings: "Show settings (mode select)",
-      max_pv_power: "PV bar full scale (W)",
       custom_settings: "Custom rows (entity / name / icon)",
       subtitle: "Subtitle under title (e.g. Venus E 3.0)",
-      show_flow: "Show power-flow strip (Solar / Grid / Battery)",
+      show_flow: "Show power-flow strip (Grid / Battery)",
     },
     helpers: {
       entities:
         "Map integration entities (see README for marstek_venus keys).",
-      max_pv_power: "Upper limit for the solar power progress bar.",
       custom_settings:
         "Extra sensor / switch / select rows at the bottom.",
       subtitle: "Short line under the card title; leave empty to hide.",
       show_flow:
-        "Typical for all-in-one hybrids: quick overview before the detail tiles.",
+        "Quick overview of grid and battery power flow.",
     },
   },
   de: {
@@ -65,11 +59,9 @@ const languages = {
       flow_caption: "Leistungsfluss (live)",
     },
     card: {
-      solar: "Solar",
       grid: "Netz",
       offgrid: "Insel",
       battery: "Batterie",
-      energy: "Solarenergie (Summe)",
       total: "Gesamt",
       realtime: "Echtzeitleistung",
       settings: "Einstellungen",
@@ -79,24 +71,20 @@ const languages = {
       entities: "Entitäten",
       compact: "Kompaktansicht",
       icon: "Geräte-Icon anzeigen",
-      solar: "Solar anzeigen",
       grid: "Netz anzeigen",
       battery: "Batterie anzeigen",
-      energy: "Summe Solarenergie anzeigen",
       settings: "Einstellungen (Moduswahl)",
-      max_pv_power: "PV-Balken Vollausschlag (W)",
       custom_settings: "Zusätzliche Zeilen (Entität / Name / Icon)",
       subtitle: "Untertitel unter dem Kartentitel (z. B. Venus E 3.0)",
-      show_flow: "Leistungsfluss-Leiste (Solar / Netz / Batterie)",
+      show_flow: "Leistungsfluss-Leiste (Netz / Batterie)",
     },
     helpers: {
       entities: "Zuordnung der marstek_venus-Entitäten (siehe README).",
-      max_pv_power: "Obergrenze für den Solar-Leistungsbalken.",
       custom_settings:
         "Zusätzliche Sensor-, Schalter- oder Auswahl-Zeilen unten.",
       subtitle: "Kurze Zeile unter dem Titel; leer lassen zum Ausblenden.",
       show_flow:
-        "Üblich bei All-in-One-Hybriden: Schnellüberblick vor den Kacheln.",
+        "Schnellüberblick über Netz- und Batterie-Leistungsfluss.",
     },
   },
 };
@@ -123,16 +111,6 @@ function numState(hass, entityId) {
   if (!entityId || !hass?.states[entityId]) return 0;
   const v = Number(hass.states[entityId].state);
   return Number.isFinite(v) ? v : 0;
-}
-
-function energyToKwh(hass, entityId) {
-  if (!entityId || !hass?.states[entityId]) return 0;
-  const st = hass.states[entityId];
-  const value = Number(st.state) || 0;
-  const u = (st.attributes?.unit_of_measurement || "").toLowerCase();
-  if (u === "kwh") return value;
-  if (u === "wh" || u === "w·h") return value / 1000;
-  return value / 1000;
 }
 
 class Venuse3Card extends LitElement {
@@ -319,10 +297,6 @@ class Venuse3Card extends LitElement {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 14px;
-      }
-      .solar {
-        grid-column: 1 / -1;
-        padding: 18px;
       }
       .battery-card {
         display: flex;
@@ -524,7 +498,8 @@ class Venuse3Card extends LitElement {
           grid-template-columns: 1fr;
         }
         .battery-card {
-          grid-row: auto;
+          grid-column: 1 / -1 !important;
+          grid-row: auto !important;
         }
       }
     `;
@@ -535,14 +510,11 @@ class Venuse3Card extends LitElement {
       name: "Marstek Venus",
       subtitle: "Venus E 3.0",
       show_flow: true,
-      solar: true,
       grid: true,
       battery: true,
-      energy: true,
       settings: true,
       icon: false,
       compact: false,
-      max_pv_power: 6000,
       entities: {},
       ...config,
     };
@@ -572,10 +544,8 @@ class Venuse3Card extends LitElement {
     const e = this.config.entities || {};
     this._soc = numState(hass, e.battery_soc);
     this._capWh = numState(hass, e.battery_capacity);
-    this._pv = numState(hass, e.pv_power);
     this._grid = numState(hass, e.ongrid_power);
     this._offgrid = e.offgrid_power ? numState(hass, e.offgrid_power) : null;
-    this._pvKwhTotal = e.total_pv_energy ? energyToKwh(hass, e.total_pv_energy) : 0;
     this._modeText = e.operating_mode && hass.states[e.operating_mode]?.state ? hass.states[e.operating_mode].state : "";
 
     const bat = hass.states[e.battery_soc];
@@ -617,8 +587,6 @@ class Venuse3Card extends LitElement {
     const disOn = e.discharge_permission && this._hass?.states[e.discharge_permission]?.state === "on";
     if (chOn && this._soc < 100) return "charging";
     if (disOn && this._soc > 0) return "discharging";
-    if (this._pv > this._grid && this._soc < 100) return "charging";
-    if (this._grid > this._pv && this._soc > 0) return "discharging";
     return "";
   }
 
@@ -641,19 +609,6 @@ class Venuse3Card extends LitElement {
     const e = this.config.entities || {};
     const chev = html`<div class="flow-chev"><ha-icon icon="mdi:chevron-right"></ha-icon></div>`;
     const nodes = [];
-
-    if (this.config.solar) {
-      const id = e.pv_power;
-      const val = id ? `${Math.round(this._pv)}` : "—";
-      nodes.push(html`
-        <div class="flow-node" @click=${() => this._handleMoreInfo(id)}>
-          <ha-icon icon="mdi:solar-power-variant-outline"></ha-icon>
-          <span class="flow-label">${localize("card.solar", lang)}</span>
-          <span class="flow-value">${val}</span>
-          <span class="flow-unit">${id ? "W" : ""}</span>
-        </div>
-      `);
-    }
 
     if (this.config.grid) {
       const id = e.ongrid_power;
@@ -716,31 +671,6 @@ class Venuse3Card extends LitElement {
     `;
   }
 
-  _renderSolar(lang) {
-    const maxW = this.config.max_pv_power || 6000;
-    const pct = Math.min(100, Math.round((this._pv / maxW) * 100));
-    const e = this.config.entities;
-    return html`
-      <article class="card solar">
-        <div class="title">
-          ${localize("card.solar", lang)}
-          <div
-            class="right-big"
-            @click=${() => this._handleMoreInfo(e.pv_power)}
-          >
-            ${Math.round(this._pv)}
-          </div>
-          <div class="big-num-unit">W</div>
-        </div>
-        <div class="subtitle">${localize("card.realtime", lang)}</div>
-        <div class="barwrap">
-          <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
-        </div>
-        <div class="icon-corner"><ha-icon icon="mdi:solar-power-variant-outline"></ha-icon></div>
-      </article>
-    `;
-  }
-
   _renderGrid(lang) {
     const e = this.config.entities;
     return html`
@@ -776,12 +706,7 @@ class Venuse3Card extends LitElement {
     let n = 0;
     if (this.config.grid) n += 1;
     if (this._offgrid !== null) n += 1;
-    if (this.config.energy && this.config.entities.total_pv_energy) n += 1;
     return n;
-  }
-
-  _batteryGridStartRow() {
-    return this.config.solar ? 2 : 1;
   }
 
   _batteryFullWidth() {
@@ -796,10 +721,9 @@ class Venuse3Card extends LitElement {
     const leftRows = this._leftColumnRows();
     const fullW = this._batteryFullWidth();
     const span = Math.max(leftRows, 1);
-    const startRow = this._batteryGridStartRow();
     const place = fullW
       ? "grid-column: 1 / -1;"
-      : `grid-column: 2; grid-row: ${startRow} / span ${span};`;
+      : `grid-column: 2; grid-row: 1 / span ${span};`;
     return html`
       <article class="card battery-card" style="${place}">
         <div class="title">${localize("card.battery", lang)}</div>
@@ -834,21 +758,6 @@ class Venuse3Card extends LitElement {
           </div>
           <div class="icon-corner"><ha-icon icon="mdi:battery-high"></ha-icon></div>
         </div>
-      </article>
-    `;
-  }
-
-  _renderEnergy(lang) {
-    const e = this.config.entities;
-    return html`
-      <article class="card" @click=${() => this._handleMoreInfo(e.total_pv_energy)}>
-        <div class="title">${localize("card.energy", lang)}</div>
-        <div class="subtitle">${localize("card.total", lang)}</div>
-        <div class="flex-wrapper">
-          <div class="big-num">${this._pvKwhTotal.toFixed(2)}</div>
-          <div class="big-num-unit">kWh</div>
-        </div>
-        <div class="icon-corner"><ha-icon icon="mdi:chart-areaspline"></ha-icon></div>
       </article>
     `;
   }
@@ -983,10 +892,6 @@ class Venuse3Card extends LitElement {
           <div class="name">${this.config.name}</div>
           <div class="flex">
             <div class="val">
-              <ha-icon icon="mdi:solar-power"></ha-icon>
-              <p>${Math.round(this._pv)} W</p>
-            </div>
-            <div class="val">
               <ha-icon icon="mdi:transmission-tower"></ha-icon>
               <p>${Math.round(this._grid)} W</p>
             </div>
@@ -1019,11 +924,9 @@ class Venuse3Card extends LitElement {
           ${this.config.icon ? this._renderUnit(bcls) : ""}
         </div>
         <section class="grid">
-          ${this.config.solar ? this._renderSolar(lang) : ""}
           ${this.config.grid ? this._renderGrid(lang) : ""}
           ${this.config.battery ? this._renderBattery(lang) : ""}
           ${this._offgrid !== null ? this._renderOffgrid(lang) : ""}
-          ${this.config.energy && this.config.entities.total_pv_energy ? this._renderEnergy(lang) : ""}
           ${this._renderSettings(lang)}
         </section>
       </div>
@@ -1054,21 +957,16 @@ class Venuse3CardEditor extends LitElement {
       name: "Marstek Venus",
       subtitle: "Venus E 3.0",
       show_flow: true,
-      solar: true,
       grid: true,
       battery: true,
-      energy: true,
       settings: true,
       icon: false,
       compact: false,
-      max_pv_power: 6000,
       entities: {
         battery_soc: "",
         battery_capacity: "",
-        pv_power: "",
         ongrid_power: "",
         offgrid_power: "",
-        total_pv_energy: "",
         operating_mode: "",
         mode_select: "",
         charge_permission: "",
@@ -1120,10 +1018,8 @@ class Venuse3CardEditor extends LitElement {
             properties: {
               battery_soc: { selector: { entity: { domain: "sensor" } } },
               battery_capacity: { selector: { entity: { domain: "sensor" } } },
-              pv_power: { selector: { entity: { domain: "sensor" } } },
               ongrid_power: { selector: { entity: { domain: "sensor" } } },
               offgrid_power: { selector: { entity: { domain: "sensor" } } },
-              total_pv_energy: { selector: { entity: { domain: "sensor" } } },
               operating_mode: { selector: { entity: { domain: "sensor" } } },
               mode_select: { selector: { entity: { domain: "select" } } },
               charge_permission: { selector: { entity: { domain: "switch" } } },
@@ -1146,12 +1042,9 @@ class Venuse3CardEditor extends LitElement {
       },
       { name: "compact", selector: { boolean: {} } },
       { name: "icon", selector: { boolean: {} } },
-      { name: "solar", selector: { boolean: {} } },
       { name: "grid", selector: { boolean: {} } },
       { name: "battery", selector: { boolean: {} } },
-      { name: "energy", selector: { boolean: {} } },
       { name: "settings", selector: { boolean: {} } },
-      { name: "max_pv_power", selector: { number: { min: 100, max: 50000, step: 100 } } },
     ];
 
     return html`
