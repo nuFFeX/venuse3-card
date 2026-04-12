@@ -802,12 +802,14 @@ class Venuse3Card extends LitElement {
               </div>
               <ha-select
                 .value=${entity.state}
-                @selected=${(ev) => {
+                @closed=${(ev) => {
                   const val = ev.target.value;
-                  this._hass.callService("select", "select_option", {
-                    entity_id: entity.entity_id,
-                    option: val,
-                  });
+                  if (val && val !== entity.state) {
+                    this._hass.callService("select", "select_option", {
+                      entity_id: entity.entity_id,
+                      option: val,
+                    });
+                  }
                 }}
               >
                 ${(entity.attributes?.options || []).map(
@@ -850,11 +852,14 @@ class Venuse3Card extends LitElement {
               </div>
               <ha-select
                 .value=${sel.state}
-                @selected=${(ev) => {
-                  this._hass.callService("select", "select_option", {
-                    entity_id: sel.entity_id,
-                    option: ev.target.value,
-                  });
+                @closed=${(ev) => {
+                  const val = ev.target.value;
+                  if (val && val !== sel.state) {
+                    this._hass.callService("select", "select_option", {
+                      entity_id: sel.entity_id,
+                      option: val,
+                    });
+                  }
                 }}
               >
                 ${(sel.attributes?.options || []).map(

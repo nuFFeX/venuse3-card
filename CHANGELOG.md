@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Fixed
+- Mode select reverts immediately after selection: `mwc-select` fires `@selected` on every programmatic `.value` update (every LitElement re-render), causing a feedback loop that called `select.select_option` with the old mode and reverted the change. Fixed by switching to `@closed` (fires only on user interaction) with a guard that skips the service call if the value hasn't changed. Applied to both the mode select in settings and custom select entities.
 - Mobile-Layout: Batterie-Kachel wurde auf Smartphones in eine erzwungene zweite Spalte geschoben (Inline-`grid-column`-Style überschrieb die Media-Query). Behoben mit `!important`-Override in der `@media (max-width: 700px)`-Regel.
 
 ### Removed
