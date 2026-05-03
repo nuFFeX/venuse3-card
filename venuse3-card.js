@@ -19,6 +19,8 @@ const languages = {
       grid: "Grid",
       offgrid: "Off-grid",
       battery: "Battery",
+      ct: "CT",
+      ct_disconnected: "CT disconnected",
       total: "Total",
       realtime: "Realtime power",
       settings: "Settings",
@@ -30,6 +32,7 @@ const languages = {
       icon: "Show device icon",
       grid: "Show grid",
       battery: "Show battery",
+      ct: "Show CT meter",
       settings: "Show settings (mode select)",
       custom_settings: "Custom rows (entity / name / icon)",
       subtitle: "Subtitle under title (e.g. Venus E 3.0)",
@@ -62,6 +65,8 @@ const languages = {
       grid: "Netz",
       offgrid: "Insel",
       battery: "Batterie",
+      ct: "CT",
+      ct_disconnected: "CT getrennt",
       total: "Gesamt",
       realtime: "Echtzeitleistung",
       settings: "Einstellungen",
@@ -73,6 +78,7 @@ const languages = {
       icon: "Geräte-Icon anzeigen",
       grid: "Netz anzeigen",
       battery: "Batterie anzeigen",
+      ct: "CT-Zähler anzeigen",
       settings: "Einstellungen (Moduswahl)",
       custom_settings: "Zusätzliche Zeilen (Entität / Name / Icon)",
       subtitle: "Untertitel unter dem Kartentitel (z. B. Venus E 3.0)",
@@ -202,6 +208,12 @@ class Venuse3Card extends LitElement {
         color: var(--venus-teal);
         --mdc-icon-size: 28px;
       }
+      .flow-node--warn ha-icon {
+        color: #f59e0b;
+      }
+      .flow-node--warn .flow-label {
+        color: #f59e0b;
+      }
       .flow-label {
         font-size: 10px;
         text-transform: uppercase;
@@ -231,67 +243,195 @@ class Venuse3Card extends LitElement {
         color: var(--muted);
         --mdc-icon-size: 22px;
       }
+      /* Marstek Venus E case visualization */
       .unit {
-        width: 80px;
-        height: 130px;
-        border-radius: 18px;
-        background: linear-gradient(145deg, #134e4a 0%, #0f766e 42%, #115e59 100%);
-        box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.07), inset 0 -8px 18px rgba(0, 0, 0, 0.4);
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .unit .battery-bar {
-        width: 10px;
-        height: 80px;
-        border-radius: 6px;
-        border: 1px solid #000;
-        background: rgb(28, 28, 28);
+        width: 96px;
+        height: 132px;
+        border-radius: 12px;
+        background: linear-gradient(155deg, #1d1d1f 0%, #0e0e10 55%, #050507 100%);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          inset 0 -10px 22px rgba(0, 0, 0, 0.55),
+          0 6px 18px rgba(0, 0, 0, 0.45);
         position: relative;
         overflow: hidden;
-        display: flex;
-        justify-content: center;
+        flex-shrink: 0;
       }
-      .unit .battery-fill {
+      .unit::before {
+        /* glossy diagonal glass highlight */
+        content: "";
         position: absolute;
-        bottom: 2px;
-        width: 4px;
-        background: linear-gradient(var(--venus-cyan-bright), var(--venus-cyan));
-        box-shadow: 0 0 5px rgba(45, 212, 191, 0.65);
-        border-radius: 2px;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.18) 0%,
+          rgba(255, 255, 255, 0.06) 28%,
+          transparent 55%
+        );
+        pointer-events: none;
+      }
+      .unit::after {
+        /* faint hairline separating the top glass strip from the body */
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 32px;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.09) 18%,
+          rgba(255, 255, 255, 0.09) 82%,
+          transparent
+        );
+        pointer-events: none;
+      }
+      .unit .led-strip {
+        position: absolute;
+        top: 14px;
+        left: 12px;
+        right: 12px;
+        height: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .unit .led-dots {
+        flex: 0 0 22px;
+        height: 2px;
+        border-radius: 1px;
+        background:
+          linear-gradient(
+            90deg,
+            rgba(45, 212, 191, 0.55) 0 5px,
+            transparent 5px 8px,
+            rgba(45, 212, 191, 0.55) 8px 13px,
+            transparent 13px 16px,
+            rgba(45, 212, 191, 0.55) 16px 21px,
+            transparent 21px 22px
+          );
+        opacity: 0.85;
+      }
+      .unit .led-track {
+        flex: 1 1 auto;
+        height: 2px;
+        background: rgba(45, 212, 191, 0.18);
+        border-radius: 1px;
+        position: relative;
+        overflow: hidden;
+      }
+      .unit .led-track::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -35%;
+        width: 35%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          var(--venus-cyan-bright) 50%,
+          transparent 100%
+        );
+        animation: ledSlide 4s infinite linear;
+      }
+      .unit.charging .led-track {
+        background: rgba(103, 232, 249, 0.22);
+      }
+      .unit.charging .led-track::after {
+        animation-duration: 1.8s;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          #67e8f9 50%,
+          transparent 100%
+        );
+        box-shadow: 0 0 6px #67e8f9;
+      }
+      .unit.discharging .led-track {
+        background: rgba(251, 146, 60, 0.22);
+      }
+      .unit.discharging .led-track::after {
+        animation-duration: 1.8s;
+        animation-direction: reverse;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          #fb923c 50%,
+          transparent 100%
+        );
+        box-shadow: 0 0 6px #fb923c;
+      }
+      @keyframes ledSlide {
+        0% { left: -35%; }
+        100% { left: 100%; }
+      }
+      .unit .case-glow {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
         height: 0%;
-        transition: height 0.6s ease;
+        background: linear-gradient(
+          0deg,
+          rgba(45, 212, 191, 0.32) 0%,
+          rgba(45, 212, 191, 0.08) 55%,
+          rgba(45, 212, 191, 0) 100%
+        );
+        pointer-events: none;
+        transition: height 0.6s ease, background 0.4s ease;
       }
-      .unit .battery-fill.charging {
-        animation: pulseBlue 2.5s infinite ease-in-out;
+      .unit.charging .case-glow {
+        animation: glowPulseTeal 2.5s infinite ease-in-out;
       }
-      .unit .battery-fill.discharging {
-        background: linear-gradient(#fb923c, #ea580c);
-        box-shadow: 0 0 4px #fb923c;
-        animation: pulseOrange 2.5s infinite ease-in-out;
+      .unit.discharging .case-glow {
+        background: linear-gradient(
+          0deg,
+          rgba(251, 146, 60, 0.32) 0%,
+          rgba(251, 146, 60, 0.08) 55%,
+          rgba(251, 146, 60, 0) 100%
+        );
+        animation: glowPulseAmber 2.5s infinite ease-in-out;
       }
-      @keyframes pulseBlue {
-        0%,
-        100% {
-          opacity: 0.65;
-          transform: scaleY(0.96);
-        }
-        50% {
-          opacity: 1;
-          transform: scaleY(1.04);
-        }
+      @keyframes glowPulseTeal {
+        0%, 100% { opacity: 0.7; }
+        50% { opacity: 1; }
       }
-      @keyframes pulseOrange {
-        0%,
-        100% {
-          opacity: 0.65;
-          transform: scaleY(0.96);
-        }
-        50% {
-          opacity: 1;
-          transform: scaleY(1.04);
-        }
+      @keyframes glowPulseAmber {
+        0%, 100% { opacity: 0.7; }
+        50% { opacity: 1; }
+      }
+      .unit .brand {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 14px;
+        text-align: center;
+        font-size: 8px;
+        letter-spacing: 2.4px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.82);
+        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+        z-index: 2;
+      }
+      .unit .feet {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        bottom: 0;
+        display: flex;
+        justify-content: space-between;
+        z-index: 2;
+        pointer-events: none;
+      }
+      .unit .feet::before,
+      .unit .feet::after {
+        content: "";
+        width: 10px;
+        height: 3px;
+        background: #000;
+        border-radius: 0 0 2px 2px;
       }
       .grid {
         display: grid;
@@ -512,6 +652,7 @@ class Venuse3Card extends LitElement {
       show_flow: true,
       grid: true,
       battery: true,
+      ct: true,
       settings: true,
       icon: false,
       compact: false,
@@ -546,6 +687,10 @@ class Venuse3Card extends LitElement {
     this._capWh = numState(hass, e.battery_capacity);
     this._grid = numState(hass, e.ongrid_power);
     this._offgrid = e.offgrid_power ? numState(hass, e.offgrid_power) : null;
+    this._ctPower = e.ct_total_power ? numState(hass, e.ct_total_power) : null;
+    this._ctConnected = e.ct_connected
+      ? hass.states[e.ct_connected]?.state === "on"
+      : null;
     this._modeText = e.operating_mode && hass.states[e.operating_mode]?.state ? hass.states[e.operating_mode].state : "";
 
     const bat = hass.states[e.battery_soc];
@@ -634,6 +779,27 @@ class Venuse3Card extends LitElement {
       `);
     }
 
+    if (this.config.ct && (e.ct_total_power || e.ct_connected)) {
+      const disconnected = this._ctConnected === false;
+      const id = e.ct_total_power || e.ct_connected;
+      const val =
+        this._ctPower !== null && !disconnected ? `${Math.round(this._ctPower)}` : "—";
+      const label = disconnected
+        ? localize("card.ct_disconnected", lang)
+        : localize("card.ct", lang);
+      nodes.push(html`
+        <div
+          class="flow-node ${disconnected ? "flow-node--warn" : ""}"
+          @click=${() => this._handleMoreInfo(id)}
+        >
+          <ha-icon icon="${disconnected ? "mdi:alert-circle-outline" : "mdi:current-ac"}"></ha-icon>
+          <span class="flow-label">${label}</span>
+          <span class="flow-value">${val}</span>
+          <span class="flow-unit">${val === "—" ? "" : "W"}</span>
+        </div>
+      `);
+    }
+
     if (this.config.battery && e.battery_soc) {
       nodes.push(html`
         <div class="flow-node" @click=${() => this._handleMoreInfo(e.battery_soc)}>
@@ -662,11 +828,17 @@ class Venuse3Card extends LitElement {
   }
 
   _renderUnit(cls) {
+    const fillH = Math.max(0, Math.min(this._soc || 0, 100));
     return html`
-      <div class="unit">
-        <div class="battery-bar">
-          <div class="battery-fill ${cls}" style="height:${Math.min(this._soc, 98)}%"></div>
+      <div class="unit ${cls}">
+        <div class="case-glow" style="height:${fillH}%"></div>
+        <div class="led-strip">
+          <span class="led-dots"></span>
+          <div class="led-track"></div>
+          <span class="led-dots"></span>
         </div>
+        <div class="brand">MARSTEK</div>
+        <div class="feet"></div>
       </div>
     `;
   }
@@ -702,11 +874,47 @@ class Venuse3Card extends LitElement {
     `;
   }
 
+  _renderCT(lang) {
+    if (!this.config.ct) return html``;
+    const e = this.config.entities;
+    if (!e.ct_total_power && !e.ct_connected) return html``;
+    const disconnected = this._ctConnected === false;
+    const id = e.ct_total_power || e.ct_connected;
+    const value =
+      this._ctPower !== null && !disconnected ? Number(this._ctPower).toFixed(0) : "—";
+    const subtitle = disconnected
+      ? localize("card.ct_disconnected", lang)
+      : localize("card.realtime", lang);
+    return html`
+      <article class="card" @click=${() => this._handleMoreInfo(id)}>
+        <div class="title">${localize("card.ct", lang)}</div>
+        <div class="subtitle" style="${disconnected ? "color:#f59e0b" : ""}">${subtitle}</div>
+        <div class="flex-wrapper">
+          <div class="big-num">${value}</div>
+          <div class="big-num-unit">${value === "—" ? "" : "W"}</div>
+        </div>
+        <div class="icon-corner">
+          <ha-icon
+            icon="${disconnected ? "mdi:alert-circle-outline" : "mdi:current-ac"}"
+            style="${disconnected ? "color:#f59e0b" : ""}"
+          ></ha-icon>
+        </div>
+      </article>
+    `;
+  }
+
   _leftColumnRows() {
     let n = 0;
     if (this.config.grid) n += 1;
     if (this._offgrid !== null) n += 1;
+    if (this._ctVisible()) n += 1;
     return n;
+  }
+
+  _ctVisible() {
+    if (!this.config.ct) return false;
+    const e = this.config.entities || {};
+    return Boolean(e.ct_total_power || e.ct_connected);
   }
 
   _batteryFullWidth() {
@@ -932,6 +1140,7 @@ class Venuse3Card extends LitElement {
           ${this.config.grid ? this._renderGrid(lang) : ""}
           ${this.config.battery ? this._renderBattery(lang) : ""}
           ${this._offgrid !== null ? this._renderOffgrid(lang) : ""}
+          ${this._ctVisible() ? this._renderCT(lang) : ""}
           ${this._renderSettings(lang)}
         </section>
       </div>
@@ -964,6 +1173,7 @@ class Venuse3CardEditor extends LitElement {
       show_flow: true,
       grid: true,
       battery: true,
+      ct: true,
       settings: true,
       icon: false,
       compact: false,
@@ -972,6 +1182,8 @@ class Venuse3CardEditor extends LitElement {
         battery_capacity: "",
         ongrid_power: "",
         offgrid_power: "",
+        ct_total_power: "",
+        ct_connected: "",
         operating_mode: "",
         mode_select: "",
         charge_permission: "",
@@ -1025,6 +1237,8 @@ class Venuse3CardEditor extends LitElement {
               battery_capacity: { selector: { entity: { domain: "sensor" } } },
               ongrid_power: { selector: { entity: { domain: "sensor" } } },
               offgrid_power: { selector: { entity: { domain: "sensor" } } },
+              ct_total_power: { selector: { entity: { domain: "sensor" } } },
+              ct_connected: { selector: { entity: { domain: "binary_sensor" } } },
               operating_mode: { selector: { entity: { domain: "sensor" } } },
               mode_select: { selector: { entity: { domain: "select" } } },
               charge_permission: { selector: { entity: { domain: "switch" } } },
@@ -1049,6 +1263,7 @@ class Venuse3CardEditor extends LitElement {
       { name: "icon", selector: { boolean: {} } },
       { name: "grid", selector: { boolean: {} } },
       { name: "battery", selector: { boolean: {} } },
+      { name: "ct", selector: { boolean: {} } },
       { name: "settings", selector: { boolean: {} } },
     ];
 
