@@ -20,6 +20,7 @@ const languages = {
       offgrid: "Off-grid",
       battery: "Battery",
       ct: "CT",
+      ct_connected: "CT connected",
       ct_disconnected: "CT disconnected",
       total: "Total",
       realtime: "Realtime power",
@@ -66,6 +67,7 @@ const languages = {
       offgrid: "Insel",
       battery: "Batterie",
       ct: "CT",
+      ct_connected: "CT verbunden",
       ct_disconnected: "CT getrennt",
       total: "Gesamt",
       realtime: "Echtzeitleistung",
@@ -153,6 +155,58 @@ class Venuse3Card extends LitElement {
         align-items: center;
         gap: 14px;
         padding: 6px 0 14px;
+      }
+      .status-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 9px 3px 7px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 999px;
+        line-height: 1;
+        cursor: pointer;
+        user-select: none;
+      }
+      .status-pill .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .status-pill.ok {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+      }
+      .status-pill.ok .dot {
+        background: #10b981;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.7);
+      }
+      .status-pill.bad {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+      }
+      .status-pill.bad .dot {
+        background: #ef4444;
+        box-shadow: 0 0 6px rgba(239, 68, 68, 0.85);
+        animation: dotBlink 1.4s infinite ease-in-out;
+      }
+      .status-pill.unknown {
+        background: rgba(148, 163, 184, 0.14);
+        color: var(--muted);
+      }
+      .status-pill.unknown .dot {
+        background: var(--muted);
+      }
+      @keyframes dotBlink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
       }
       .product-line {
         font-size: 11px;
@@ -316,56 +370,69 @@ class Venuse3Card extends LitElement {
       .unit .led-track {
         flex: 1 1 auto;
         height: 2px;
-        background: rgba(45, 212, 191, 0.18);
+        background: rgba(255, 255, 255, 0.06);
         border-radius: 1px;
         position: relative;
         overflow: hidden;
       }
-      .unit .led-track::after {
+      .unit .led-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 0%;
+        border-radius: 1px;
+        background: var(--venus-cyan);
+        box-shadow: 0 0 4px rgba(45, 212, 191, 0.7);
+        transition: width 0.6s ease, background 0.4s ease, box-shadow 0.4s ease;
+      }
+      /* low SOC tint */
+      .unit.soc-low .led-fill {
+        background: #ef4444;
+        box-shadow: 0 0 5px rgba(239, 68, 68, 0.7);
+      }
+      .unit.soc-mid .led-fill {
+        background: #f59e0b;
+        box-shadow: 0 0 4px rgba(245, 158, 11, 0.65);
+      }
+      .unit.soc-full .led-fill {
+        background: #67e8f9;
+        box-shadow: 0 0 7px rgba(103, 232, 249, 0.85);
+      }
+      /* moving highlight overlaid on the filled portion to show flow direction */
+      .unit .led-fill::after {
         content: "";
         position: absolute;
         top: 0;
-        left: -35%;
-        width: 35%;
+        left: -40%;
+        width: 40%;
         height: 100%;
         background: linear-gradient(
           90deg,
           transparent 0%,
-          var(--venus-cyan-bright) 50%,
+          rgba(255, 255, 255, 0.85) 50%,
           transparent 100%
         );
-        animation: ledSlide 4s infinite linear;
+        opacity: 0;
       }
-      .unit.charging .led-track {
-        background: rgba(103, 232, 249, 0.22);
+      .unit.charging .led-fill::after {
+        opacity: 1;
+        animation: ledSlide 1.8s infinite linear;
       }
-      .unit.charging .led-track::after {
-        animation-duration: 1.8s;
-        background: linear-gradient(
-          90deg,
-          transparent 0%,
-          #67e8f9 50%,
-          transparent 100%
-        );
-        box-shadow: 0 0 6px #67e8f9;
+      .unit.discharging .led-fill::after {
+        opacity: 1;
+        animation: ledSlide 1.8s infinite linear reverse;
       }
-      .unit.discharging .led-track {
-        background: rgba(251, 146, 60, 0.22);
-      }
-      .unit.discharging .led-track::after {
-        animation-duration: 1.8s;
-        animation-direction: reverse;
-        background: linear-gradient(
-          90deg,
-          transparent 0%,
-          #fb923c 50%,
-          transparent 100%
-        );
-        box-shadow: 0 0 6px #fb923c;
+      .unit.soc-full.charging .led-fill {
+        animation: fullPulse 2s infinite ease-in-out;
       }
       @keyframes ledSlide {
-        0% { left: -35%; }
+        0% { left: -40%; }
         100% { left: 100%; }
+      }
+      @keyframes fullPulse {
+        0%, 100% { box-shadow: 0 0 7px rgba(103, 232, 249, 0.85); }
+        50% { box-shadow: 0 0 12px rgba(103, 232, 249, 1); }
       }
       .unit .case-glow {
         position: absolute;
@@ -735,9 +802,35 @@ class Venuse3Card extends LitElement {
     return "";
   }
 
+  _renderCTStatusPill(lang) {
+    const e = this.config.entities || {};
+    if (!e.ct_connected) return html``;
+    let cls = "unknown";
+    let label = localize("card.ct", lang);
+    if (this._ctConnected === true) {
+      cls = "ok";
+      label = localize("card.ct_connected", lang);
+    } else if (this._ctConnected === false) {
+      cls = "bad";
+      label = localize("card.ct_disconnected", lang);
+    }
+    return html`
+      <div
+        class="status-pill ${cls}"
+        title="${label}"
+        @click=${() => this._handleMoreInfo(e.ct_connected)}
+      >
+        <span class="dot"></span>
+        <span>${label}</span>
+      </div>
+    `;
+  }
+
   _renderHeader(lang) {
     const sub = (this.config.subtitle || "").trim();
     const line = sub || localize("labels.product_line", lang);
+    const e = this.config.entities || {};
+    const showStatusRow = Boolean(e.ct_connected);
     return html`
       <div style="width:100%;padding:0 12px;margin-bottom:4px;box-sizing:border-box;">
         <div style="font-weight:600;font-size:20px">${this.config.name}</div>
@@ -745,6 +838,9 @@ class Venuse3Card extends LitElement {
         <div style="font-size:11px;color:var(--muted);margin-top:6px;">
           ${localize("labels.last_update", lang)}: ${this._lastUpdate || "—"}
         </div>
+        ${showStatusRow
+          ? html`<div class="status-row">${this._renderCTStatusPill(lang)}</div>`
+          : ""}
       </div>
     `;
   }
@@ -828,13 +924,19 @@ class Venuse3Card extends LitElement {
   }
 
   _renderUnit(cls) {
-    const fillH = Math.max(0, Math.min(this._soc || 0, 100));
+    const soc = Math.max(0, Math.min(this._soc || 0, 100));
+    let socCls = "";
+    if (soc < 15) socCls = "soc-low";
+    else if (soc < 50) socCls = "soc-mid";
+    else if (soc >= 98) socCls = "soc-full";
     return html`
-      <div class="unit ${cls}">
-        <div class="case-glow" style="height:${fillH}%"></div>
+      <div class="unit ${cls} ${socCls}">
+        <div class="case-glow" style="height:${soc}%"></div>
         <div class="led-strip">
           <span class="led-dots"></span>
-          <div class="led-track"></div>
+          <div class="led-track">
+            <div class="led-fill" style="width:${soc}%"></div>
+          </div>
           <span class="led-dots"></span>
         </div>
         <div class="brand">MARSTEK</div>
@@ -1098,6 +1200,11 @@ class Venuse3Card extends LitElement {
     if (this._soc >= 100) icon = "mdi:battery";
     else if (this._soc < 10) icon = "mdi:battery-outline";
     else icon = `mdi:battery-${Math.floor(this._soc / 10) * 10}`;
+    const showCT = Boolean(e.ct_connected);
+    const ctOk = this._ctConnected === true;
+    const ctBad = this._ctConnected === false;
+    const ctColor = ctOk ? "#10b981" : ctBad ? "#ef4444" : "var(--muted)";
+    const ctIcon = ctBad ? "mdi:alert-circle-outline" : "mdi:current-ac";
     return html`
       <div class="compact" @click=${() => this._handleMoreInfo(e.battery_soc)}>
         <div class="device">${this._renderUnit(bcls)}</div>
@@ -1112,6 +1219,20 @@ class Venuse3Card extends LitElement {
               <ha-icon icon="${icon}" style="color:${color}"></ha-icon>
               <p>${Math.round(this._soc)} %</p>
             </div>
+            ${showCT
+              ? html`
+                  <div
+                    class="val"
+                    @click=${(ev) => {
+                      ev.stopPropagation();
+                      this._handleMoreInfo(e.ct_connected);
+                    }}
+                  >
+                    <ha-icon icon="${ctIcon}" style="color:${ctColor}"></ha-icon>
+                    <p>${ctBad ? localize("card.ct_disconnected", this._hass?.language || "en") : "CT"}</p>
+                  </div>
+                `
+              : ""}
           </div>
         </div>
       </div>
