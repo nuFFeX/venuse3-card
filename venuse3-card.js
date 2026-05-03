@@ -758,6 +758,7 @@ class Venuse3Card extends LitElement {
     this._ctConnected = e.ct_connected
       ? hass.states[e.ct_connected]?.state === "on"
       : null;
+    this._batPower = e.battery_power ? numState(hass, e.battery_power) : null;
     this._modeText = e.operating_mode && hass.states[e.operating_mode]?.state ? hass.states[e.operating_mode].state : "";
 
     const bat = hass.states[e.battery_soc];
@@ -795,10 +796,18 @@ class Venuse3Card extends LitElement {
 
   _batteryClass() {
     const e = this.config.entities || {};
+    // Prefer real power flow (bat_power): positive = discharging, negative = charging.
+    // Threshold: ignore values below 10 W to avoid jitter from idle noise.
+    if (this._batPower !== null && Number.isFinite(this._batPower)) {
+      if (this._batPower < -10 && this._soc < 100) return "charging";
+      if (this._batPower > 10 && this._soc > 0) return "discharging";
+      return "";
+    }
+    // Fallback when no battery_power entity is configured: use permission switches.
     const chOn = e.charge_permission && this._hass?.states[e.charge_permission]?.state === "on";
     const disOn = e.discharge_permission && this._hass?.states[e.discharge_permission]?.state === "on";
     if (chOn && this._soc < 100) return "charging";
-    if (disOn && this._soc > 0) return "discharging";
+    if (disOn && this._soc > 0 && this._soc < 100) return "discharging";
     return "";
   }
 
@@ -1301,6 +1310,7 @@ class Venuse3CardEditor extends LitElement {
       entities: {
         battery_soc: "",
         battery_capacity: "",
+        battery_power: "",
         ongrid_power: "",
         offgrid_power: "",
         ct_total_power: "",
@@ -1356,6 +1366,7 @@ class Venuse3CardEditor extends LitElement {
             properties: {
               battery_soc: { selector: { entity: { domain: "sensor" } } },
               battery_capacity: { selector: { entity: { domain: "sensor" } } },
+              battery_power: { selector: { entity: { domain: "sensor" } } },
               ongrid_power: { selector: { entity: { domain: "sensor" } } },
               offgrid_power: { selector: { entity: { domain: "sensor" } } },
               ct_total_power: { selector: { entity: { domain: "sensor" } } },
