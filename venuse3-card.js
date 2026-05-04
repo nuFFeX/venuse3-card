@@ -796,11 +796,11 @@ class Venuse3Card extends LitElement {
 
   _batteryClass() {
     const e = this.config.entities || {};
-    // Prefer real power flow (bat_power): positive = discharging, negative = charging.
+    // marstek_venus convention: battery_power positive = charging, negative = discharging.
     // Threshold: ignore values below 10 W to avoid jitter from idle noise.
     if (this._batPower !== null && Number.isFinite(this._batPower)) {
-      if (this._batPower < -10 && this._soc < 100) return "charging";
-      if (this._batPower > 10 && this._soc > 0) return "discharging";
+      if (this._batPower > 10 && this._soc < 100) return "charging";
+      if (this._batPower < -10 && this._soc > 0) return "discharging";
       return "";
     }
     // Fallback when no battery_power entity is configured: use permission switches.
