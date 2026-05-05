@@ -417,11 +417,11 @@ class Venuse3Card extends LitElement {
       }
       .unit.charging .led-fill::after {
         opacity: 1;
-        animation: ledSlide 1.8s infinite linear;
+        animation: ledSlide 1.8s infinite linear reverse;
       }
       .unit.discharging .led-fill::after {
         opacity: 1;
-        animation: ledSlide 1.8s infinite linear reverse;
+        animation: ledSlide 1.8s infinite linear;
       }
       .unit.soc-full.charging .led-fill {
         animation: fullPulse 2s infinite ease-in-out;
