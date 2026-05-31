@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+- Kompatibilität mit der read-only Integration `marstek_venus_modbus`:
+  - `battery_capacity` ist jetzt einheitenbewusst — Sensoren in **kWh** (Modbus-Integration) werden
+    automatisch in Wh normalisiert, **Wh** (UDP-Integration) funktioniert unverändert.
+  - Neue Option `invert_battery_power` (Default `false`): kehrt das Vorzeichen von `battery_power`
+    um, falls eine Integration die umgekehrte Lade-/Entlade-Konvention nutzt.
+  - Beispiel `examples/dashboard-snippet-modbus.yaml` (read-only, `settings: false`).
+
 ### Fixed
 - Mode select reverts immediately after selection: `mwc-select` fires `@selected` on every programmatic `.value` update (every LitElement re-render), causing a feedback loop that called `select.select_option` with the old mode and reverted the change. Fixed by switching to `@closed` (fires only on user interaction) with a guard that skips the service call if the value hasn't changed. Applied to both the mode select in settings and custom select entities.
 - Mobile-Layout: Batterie-Kachel wurde auf Smartphones in eine erzwungene zweite Spalte geschoben (Inline-`grid-column`-Style überschrieb die Media-Query). Behoben mit `!important`-Override in der `@media (max-width: 700px)`-Regel.

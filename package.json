@@ -1,6 +1,6 @@
 {
   "name": "venuse3-card",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Lovelace card for Marstek Venus E 3.0 (marstek_venus)",
   "type": "module",
   "scripts": {

@@ -1,0 +1,34 @@
+# venuse3-card mit der READ-ONLY Modbus-Integration `marstek_venus_modbus`
+# (https://github.com/nuFFeX/marstek-venus-3-modbus).
+#
+# Unterschiede zur UDP-Integration `marstek_venus`:
+#   * Read-only: KEINE Steuerung -> `settings: false`, und mode_select /
+#     charge_permission / discharge_permission werden NICHT gemappt.
+#   * `battery_capacity` zeigt auf den Nennkapazitäts-Sensor in kWh
+#     (battery_total_energy). Die Card erkennt die Einheit kWh automatisch.
+#   * Kein MPPT/Solar (pv_power etc. entfallen ohnehin).
+#
+# WICHTIG zu den entity_id-Slugs: Home Assistant bildet die ID aus dem
+# *übersetzten* Anzeigenamen + Gerätenamen. Beispiel-Gerät heißt "VNSE3-0"
+# (-> Slug-Präfix `vnse3_0`). Bei deutscher HA-Oberfläche sind die Namen
+# deutsch. Die exakten IDs unter Entwicklerwerkzeuge -> Zustände prüfen und
+# unten ersetzen.
+
+type: custom:venuse3-card
+name: Marstek Venus 3
+subtitle: Venus E 3.0 (Modbus)
+show_flow: true
+settings: false          # read-only: Einstellungs-/Steuerblock ausblenden
+# invert_battery_power: true   # aktivieren, falls der Lade-Blitz beim Entladen erscheint
+entities:
+  # --- Englische HA-Oberfläche ---
+  battery_soc: sensor.vnse3_0_battery_soc
+  battery_capacity: sensor.vnse3_0_battery_total_energy   # kWh, wird automatisch erkannt
+  battery_power: sensor.vnse3_0_battery_power
+  ongrid_power: sensor.vnse3_0_grid_power
+
+  # --- Deutsche HA-Oberfläche (stattdessen verwenden) ---
+  # battery_soc: sensor.vnse3_0_batterie_ladestand
+  # battery_capacity: sensor.vnse3_0_batteriekapazitat
+  # battery_power: sensor.vnse3_0_batterieleistung
+  # ongrid_power: sensor.vnse3_0_netzleistung

@@ -38,6 +38,7 @@ const languages = {
       custom_settings: "Custom rows (entity / name / icon)",
       subtitle: "Subtitle under title (e.g. Venus E 3.0)",
       show_flow: "Show power-flow strip (Grid / Battery)",
+      invert_battery_power: "Invert battery power sign",
     },
     helpers: {
       entities:
@@ -47,6 +48,8 @@ const languages = {
       subtitle: "Short line under the card title; leave empty to hide.",
       show_flow:
         "Quick overview of grid and battery power flow.",
+      invert_battery_power:
+        "Flip if the charging bolt shows while discharging (some integrations use the opposite sign).",
     },
   },
   de: {
@@ -85,6 +88,7 @@ const languages = {
       custom_settings: "Zusätzliche Zeilen (Entität / Name / Icon)",
       subtitle: "Untertitel unter dem Kartentitel (z. B. Venus E 3.0)",
       show_flow: "Leistungsfluss-Leiste (Netz / Batterie)",
+      invert_battery_power: "Vorzeichen der Batterieleistung umkehren",
     },
     helpers: {
       entities: "Zuordnung der marstek_venus-Entitäten (siehe README).",
@@ -93,6 +97,8 @@ const languages = {
       subtitle: "Kurze Zeile unter dem Titel; leer lassen zum Ausblenden.",
       show_flow:
         "Schnellüberblick über Netz- und Batterie-Leistungsfluss.",
+      invert_battery_power:
+        "Umschalten, wenn der Lade-Blitz beim Entladen erscheint (manche Integrationen nutzen das umgekehrte Vorzeichen).",
     },
   },
 };
@@ -723,6 +729,7 @@ class Venuse3Card extends LitElement {
       settings: true,
       icon: false,
       compact: false,
+      invert_battery_power: false,
       entities: {},
       ...config,
     };
@@ -751,7 +758,15 @@ class Venuse3Card extends LitElement {
 
     const e = this.config.entities || {};
     this._soc = numState(hass, e.battery_soc);
+    // Capacity is normalized to Wh internally (the battery tile divides by 1000).
+    // marstek_venus (UDP) reports Wh, marstek_venus_modbus reports kWh — honor the
+    // entity's unit so both integrations work without per-install conversion.
     this._capWh = numState(hass, e.battery_capacity);
+    const capUnit =
+      e.battery_capacity &&
+      hass.states[e.battery_capacity]?.attributes?.unit_of_measurement;
+    if (capUnit === "kWh") this._capWh *= 1000;
+    else if (capUnit === "MWh") this._capWh *= 1e6;
     this._grid = numState(hass, e.ongrid_power);
     this._offgrid = e.offgrid_power ? numState(hass, e.offgrid_power) : null;
     this._ctPower = e.ct_total_power ? numState(hass, e.ct_total_power) : null;
@@ -797,10 +812,13 @@ class Venuse3Card extends LitElement {
   _batteryClass() {
     const e = this.config.entities || {};
     // marstek_venus convention: battery_power positive = charging, negative = discharging.
+    // Some integrations (e.g. marstek_venus_modbus, depending on firmware) use the
+    // opposite sign — set `invert_battery_power: true` to flip it.
     // Threshold: ignore values below 10 W to avoid jitter from idle noise.
     if (this._batPower !== null && Number.isFinite(this._batPower)) {
-      if (this._batPower > 10 && this._soc < 100) return "charging";
-      if (this._batPower < -10 && this._soc > 0) return "discharging";
+      const bp = this.config.invert_battery_power ? -this._batPower : this._batPower;
+      if (bp > 10 && this._soc < 100) return "charging";
+      if (bp < -10 && this._soc > 0) return "discharging";
       return "";
     }
     // Fallback when no battery_power entity is configured: use permission switches.
@@ -1307,6 +1325,7 @@ class Venuse3CardEditor extends LitElement {
       settings: true,
       icon: false,
       compact: false,
+      invert_battery_power: false,
       entities: {
         battery_soc: "",
         battery_capacity: "",
@@ -1359,6 +1378,7 @@ class Venuse3CardEditor extends LitElement {
       { name: "name", selector: { text: {} } },
       { name: "subtitle", selector: { text: {} } },
       { name: "show_flow", selector: { boolean: {} } },
+      { name: "invert_battery_power", selector: { boolean: {} } },
       {
         name: "entities",
         selector: {

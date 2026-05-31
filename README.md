@@ -47,6 +47,20 @@ Abweichende Slugs (z. B. Umlaute) bitte unter **Einstellungen → Geräte & Dien
 
 - `examples/dashboard-snippet-de.yaml` – deutsche `entity_id`-Beispiele
 - `examples/dashboard-snippet.yaml` – englische Beispiele
+- `examples/dashboard-snippet-modbus.yaml` – read-only Modbus-Integration `marstek_venus_modbus`
+
+## Read-only Modbus-Integration (`marstek_venus_modbus`)
+
+Die Karte funktioniert auch mit der read-only Modbus-Integration. Zu beachten:
+
+- **`settings: false`** setzen und `mode_select` / `charge_permission` / `discharge_permission`
+  **nicht** mappen — diese Integration ist rein lesend und bietet keine Steuer-Entitäten.
+- **`battery_capacity`** auf den kWh-Sensor `battery_total_energy` mappen — die Karte erkennt die
+  Einheit (kWh/Wh) automatisch.
+- **`invert_battery_power: true`** setzen, falls der Lade-Blitz beim Entladen erscheint (die
+  Vorzeichen-Konvention der Batterieleistung kann je nach Integration/Firmware abweichen).
+
+Siehe `examples/dashboard-snippet-modbus.yaml`.
 
 ## `localize/`
 
